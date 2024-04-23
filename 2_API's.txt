@@ -1,0 +1,94 @@
+1) Mobile/Web App --> API -->Routes --> will call respective Large language model.
+2) app.py --> where we define our different api routes
+3) client.py--> integrate our apis defined above with mobile app .
+4) We will need to install base libraries such as uvicorn, fastapi
+
+from fastapi import FastAPI
+from langchain.prompt import ChatPromptTemplate
+from langchain.chat_models import ChatOpenAI
+from langserve import add_routes
+import uvicorn
+import os
+from langchain_community.llms import Ollama
+from dotenv import load_dotenv
+
+load_dotenv()
+os.environ["OPENAI_API_KEY"]=os.getenv("OPENAI_API_KEY")
+
+app=FastAPI( 
+       title="Langchain Server",
+       version="1.0",
+       description="A simple API Server"
+)
+
+app.routes(
+      app,
+# I need to bind my Prompt Template with my route
+
+model=ChatOpenAI()
+llm=Ollama(model="llama2")
+prompt1=ChatPromptTemplate.from_template("Write me an essay about {topic} with 100 words")
+prompt2=ChatPromptTemplate.from_template("Write me an essay about {topic} with 100 words")
+
+add_routes(
+               app,
+               ChatOpenAI(),
+               path="essay"
+)
+
+
+add_routes(
+               app,
+               prompt1|model,
+               path="essay"
+)
+
+add_routes(
+               app,
+               prompt2|llm,
+               path="poem"
+)
+
+
+if __name__=="__main__":
+  uvicorn.run(app,host="locahost",port=8000)
+
+
+client.py
+---------
+import requests
+import streamlit as st
+
+def get_openai_response(input_text):
+  response=requests.post("http://localhost:8000/essay/invoke"),
+json = {'input':{'topic':input_text}})
+
+return response.json()['output']['content']
+
+def get_ollama_response(input_text):
+  response=requests.post("http://localhost:8000/poem/invoke"),
+json = {'input':{'topic':input_text}})
+
+return response.json()['output']
+
+##Create A Streamlit Framework which call respecive LLM API's based on the input text.
+
+st.title('LANGCHAIN Demo with LLAMA2 API')
+input_text = st.text_input("Write an essay on")
+input_text1=st.text_input("Write a poem on")
+
+if input_text:
+  st.write(get_openai_response(input_text))
+
+if input_text1:
+  st.write(get_ollama_response(input_text1))
+
+
+
+
+      
+
+
+
+
+

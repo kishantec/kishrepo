@@ -1,0 +1,51 @@
+from langchain_community.document_loaders import TextLoader
+loader=TextLoader("speech.txt")
+text_documents = loader.load()
+
+import os
+from dotenv import load_dotenv
+load_dotenv()
+
+os.environ['OPENAI_API_KEY']=os.getenv("OPENAI_API_KEY")
+from langchain_community.document_loaders import WebBaseLoader
+import bs4  #beautify soap
+
+#load the html page and use it as a source document for rag.
+loader=WebBaseLoader(web_paths="https://",bs_kwargs=dict(parse_only=bs4.SoupStrainer(class_=("post-title","post_content","post-header"))),)
+text_documents=loader.load()
+
+##load pdf
+from langchain_community.document_loader import PyPDFLoader
+loader=PyPDFLoader('attention.pdf')
+docs=loader.load()
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
+documents = text_splitter.split_documents(docs)
+
+#Vector Embeddings
+from langchain_community.embedidngs import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+db=Chroma.from_documents(documents[:20],OpenAIEmbeddings())
+
+#db is our vector database
+
+#quering the vector db
+
+query = "who are the..."
+result=db.similarity_search(query)
+result[0].page_content
+
+
+#using FAISS Vector Database
+
+from langchain_community.vectorstores import FAISS
+db1=FAISS.from_documents(documents[:20],OpenAIEmbeddings())
+
+
+
+
+
+
+
+

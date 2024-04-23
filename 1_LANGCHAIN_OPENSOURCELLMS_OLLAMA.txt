@@ -1,0 +1,48 @@
+#We need 
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_community.llms import Ollama
+
+from streamlit as st
+import os
+from dotenv import load_dotenv
+
+os.environ["OPENAI_API_KEY"]=os.getenv("OPENAI_API_KEY")
+os.environ["LANGCHAIN_TRACING_V2"]="true"   #meant for tracing code
+os.environ["LANGCHAIN_API_KEY"]=os.getenv("LANGCHAIN_API_KEY")  #seeing the outputs in langchain dashboard
+
+#Define a prompt template
+prompt=ChatPromptTemplate.from_messages(
+  [
+   ("system","you are a helpful assistant")
+   ("user","Question:{question}")
+  ]
+)
+
+#streamlit framework
+
+st.title('Langchain Demo with Open API')
+input_text=st.text_input("Search the topic you want")
+
+#calling open source llm ollama
+llm = ChatOpenAI(model="llama2)
+output_parser=StrOutputParser()
+chain = prompt|llm|output_parser
+
+#Suppose we go to ollama library, we can see list of librariries. To use a specific library, we will need to download it. for that run the below in command prompt
+
+ollama run mistral
+
+if input_text:
+  st.write(chain.invoke({'question':input_text}))
+
+to run
+
+t=streamlit run abc.py
+
+
+
+
+
+

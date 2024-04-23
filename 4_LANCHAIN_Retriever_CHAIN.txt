@@ -1,0 +1,55 @@
+ollama run llama2
+We can combine Prompt along with Chains along with Retriever we can get a Response.
+
+from langchain_community.llms  import Ollama
+llm=Ollama(model="llama2")
+llm
+
+#Define a Prompt Template
+from langchain_core.prompts import ChatPromptTemplate
+prompt=ChatPromptTemplate.from_template(""" hello this is chatbot
+<context>
+{context}
+</context>
+Question:{input}""")
+
+""")
+
+#NOTE - Unlike the previous  where we use vectors to query, here we define
+the structure of the Prompt such as context and input.
+In the above context and input are auto filled.
+CONTEXTS are all documents available in the vector store
+There are different chains available such as 
+create_sql_query_chain ( if we want to construct a query for a sql database from a natural language ).
+create_stuff_document_chain (takes a list of documents and formats them into a prompt.
+It then passes the prompt to a LLM.
+
+from langchain.chains.combine_documents import create_stuff_documents_chain
+document_chain = create_stuff_documents_chain(llm,prompt)
+
+#Retriever - It is an interface that returns documents given an unstructured query. It is more general than a vector store. Vector Store can be used as a backbone of a retriever
+
+retriever = db.as_retriever()
+
+#When user asks for enquiry it goes to Retriever. It is an Interface to a vector store.
+Then it goes to LLM Model with some Prompt. This happens with the help of Stuff Document chain where it has LLM and prompt combined.
+
+from langchain.chains import create_retrieval_chain
+retrieval_chain = create_retrieval_chain(retriever,document_chain)
+response=retrieval_chain.invoke({"input":"dfdfdfdfdfdf"})
+response['answer']
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

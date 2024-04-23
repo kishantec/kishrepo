@@ -1,0 +1,54 @@
+We create 3 ENVIRONMENT vARIABLES
+
+LANGCHAIN_API_KEY = ""
+OPENAI_API_KEY=""
+LANGCHAIN_PROJECT=""
+
+CHATBOTS
+-----
+A) PAID LLMS (OPEN AI LLM )
+B) OPEN SOURCE LLM
+
+from langchain_openai import ChatOpenAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser #this is required for LLM Model to give response to format it.
+
+from streamlit as st
+import os
+from dotenv import load_dotenv
+
+os.environ["OPENAI_API_KEY"]=os.getenv("OPENAI_API_KEY")
+os.environ["LANGCHAIN_TRACING_V2"]="true"   #meant for tracing code
+os.environ["LANGCHAIN_API_KEY"]=os.getenv("LANGCHAIN_API_KEY")  #seeing the outputs in langchain dashboard
+
+#Define a prompt template
+prompt=ChatPromptTemplate.from_messages(
+  [
+   ("system","you are a helpful assistant")
+   ("user","Question:{question}")
+  ]
+)
+
+#streamlit framework
+
+st.title('Langchain Demo with Open API')
+input_text=st.text_input("Search the topic you want")
+
+#open ai LLM
+llm = ChatOpenAI(model="gpt-3,5-turbo")
+output_parser=StrOutputParser()
+chain = prompt|llm|output_parser
+
+if input_text:
+  st.write(chain.invoke({'question':input_text}))
+
+
+  ]
+
+
+
+
+
+
+
+

@@ -1,0 +1,71 @@
+##Suppose I want to have multiple knowledge sources such as arxis(scientific knowledge base, wikipedia) to build a RAG Pipeline
+
+
+!pip install arxiv
+
+from langchain_community.tools import WikipediaQueryRun
+from langchain_community.utilities import WikipediaAPIWrapper
+
+api_wrapper = WikipediaAPIWrapper(top_k_results=1,doc_contenet_chars_max=200)
+tool=WikipediaQueryRun(api_wrapper,api_wrapper)
+
+#lets also read a document from a website
+
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+loader = WebBaseLoader("https:/...")
+docs = loader.load()
+documents = RecursiveCHaracterTextSplitter(chunk_size=1000,chunk_overlap=200).split_documents(docs)
+vectordb = FAISS.from_documents(documents,OpenAIEmbeddings())
+vectordb.as_retriever()   #retreiver is an interface which will retrieve the data from database.
+
+from langchain.tools.retriever import create_retriever_tool
+
+retriever_tool = create_retriever_tool(retriever,"langsmith_search","search for info about langsmith")
+
+#arxiv tool
+
+from langchain_commmunity.utilities import ArxivAPIWrapper
+from langchain_community.tools import ArxivQueryRun
+
+arxiv_wrapper = ArxivAPIWrapper(top_k_results = 1, doc_content_chars_max=200)
+arxiv=ArxivQueryRun(api_wrapper=arxiv_wrapper)
+arxiv.name
+
+#combining all tools
+
+tools = [wiki,arxiv,retriever_tool]  
+
+#Next aim is to query from these tools. We will be using Agents for this.
+#Idea of Agent is to use a language model to choose a sequence of actions to take.
+#In agents, a language model is used as a reasoning engine to determine which actions to take and in which order.
+
+#when we give a prompt, the engine will check if the info is available in wiki, else in arxiv else in retriever tool.
+
+from dotenv import load_dotenv
+
+load_dotenv()
+import os
+os.environ['OPENAI_API_KEY]=os.getenv("OPENAI_API_KEY")
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(model="gpt3.5-turbo-0125",temperature=0)
+
+#In langchain there are pre defined prompts called as Hub which we can use
+
+from lanchain import hub
+prompt = hub.pull("hwchase17/openai-functions-agent")
+prompt.messages   # this gives all default prompt templates available.
+
+###Agent
+from langchain.agents import create_openai_tools_agent
+agent=create_openai_tools_agent(llm,tools,prompt)
+
+##Agent executor
+from langchain.agents import AgentExecutor
+AgentExecutor(agent=agent,tools=tools,verbose=True)
+
+AgentExecutor.invoke({"input":"Tell me about langsmith"})
