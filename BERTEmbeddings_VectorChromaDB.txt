@@ -1,0 +1,144 @@
+from transformers import BertTokenizer, BertModel
+from chromadb.config import Settings
+import chromadb
+import string
+import torch
+
+import pandas as pd
+import re
+
+tokenizer = BertTokenizer.from_pretrained("microsoft/BiomedNLP-KRISSBERT-PubMed-UMLS-EL")
+model = BertModel.from_pretrained("microsoft/BiomedNLP-KRISSBERT-PubMed-UMLS-EL")
+
+df = pd.read_csv("loinc.csv")
+
+
+df = df[df['STATUS']=='ACTIVE']
+
+chroma_client = chromadb.PersistentClient(path="loincv2/")
+#chroma_client.delete_collection(name="loinc_vectors_cos")
+#chroma_client.delete_collection(name="loinc_vectors_ip")
+#chroma_client.delete_collection(name="loinc_vectors_l2")
+
+
+
+# collection1 = chroma_client.create_collection(
+#          name="loinc_vectors_l2",
+#          metadata={"hnsw:space": "l2"} # l2 is the default
+#      )
+
+collection2 = chroma_client.create_collection(
+         name="loincv2_vectors_cos",
+         metadata={"hnsw:space": "cosine"} # l2 is the default
+     )
+
+# collection3 = chroma_client.create_collection(
+#          name="loinc_vectors_ip",
+#          metadata={"hnsw:space": "ip"} 
+#      )
+
+
+#collection1 = chroma_client.get_collection("loinc_vectors_l2")
+#collection2 = chroma_client.get_collection("loinc_vectors_cos")
+#collection3 = chroma_client.get_collection("loinc_vectors_ip")
+
+batch_size = 0
+print('test1')
+
+for index in df.index:
+    text = "loinc code=" + str(df['LOINC_NUM'][index])+ ",related names2=" + str(df['RELATEDNAMES2'][index])+ ",shortname=" + str(df['SHORTNAME'][index])+ ",exampleunits=" + str(df['EXAMPLE_UNITS'][index])+ ",loinc description=" + str(df['LONG_COMMON_NAME'][index])+ ",displayname=" + str(df['DisplayName'][index]) 
+    text = text.lower()   
+
+    text = re.sub(r'[^a-zA-Z0-9\s:=,]', '', text)
+   
+    text = text.strip()
+    
+   
+
+    inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    embeddings_lc = outputs.last_hidden_state.mean(dim=1).squeeze().numpy().tolist()
+    loinc_id = str(df['LOINC_NUM'][index])
+    log_text = "Written_record:"+ loinc_id + ":" + text + '\n\n'     
+
+    collection2.add(
+    embeddings=embeddings_lc,
+    documents = text,   
+    ids=loinc_id  )
+
+    # collection3.add(
+    # embeddings=embeddings_lc,
+    # documents = text,   
+    # ids=loinc_id  )
+    # print(log_text)with open('file.txt', 'w', encoding='utf-8') as file_1:
+    file_1 = open("loincv2_log.txt",'a',encoding='utf-8')
+    file_1.write(log_text + '\n')
+
+file_1.close
+#for i in range(len(df1)): 
+    #j = i+90000    
+#    print('i',j)
+#    try:
+#        text = df.loc[i, 'combinedtext']
+#    except KeyError:        
+#        continue
+    # print('Inputtext',text)  
+    # batch_ids = [df.loc[i, 'id']]
+    
+    
+    
+ 
+     
+    # print('type of embedding',type(embeddings_lc))  
+    
+    # print('embeddings',embeddings_lc)
+
+
+# Pass Prompt to check
+
+from transformers import BertTokenizer, BertModel
+from chromadb.config import Settings
+import chromadb
+
+import torch
+
+#chroma_client = chromadb.PersistentClient(path="db/") 
+chroma_client = chromadb.PersistentClient(path="loincv2/") 
+# collection1.count()
+# chroma_client = chromadb.Client()
+
+#chroma_client.get_collection()
+#chroma_client.get_collection("loinc_vectors_cos").count()
+# chroma_client.get_collection("loinc_vectors_l2").id
+# collection1 = chroma_client.get_collection("loinc_vectors_l2")
+collection2 = chroma_client.get_collection("loincv2_vectors_cos")
+# collection3 = chroma_client.get_collection("loinc_vectors_ip")
+
+collection2.count()
+#collection1.peek()
+
+
+
+import pandas as pd
+tokenizer = BertTokenizer.from_pretrained("microsoft/BiomedNLP-KRISSBERT-PubMed-UMLS-EL")
+model = BertModel.from_pretrained("microsoft/BiomedNLP-KRISSBERT-PubMed-UMLS-EL")
+TestOrderName= 'Mycobacterial Culture'
+
+text =TestOrderName
+#text = text.lower()
+inputs = tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+
+with torch.no_grad():
+    outputs = model(**inputs)
+embeddings_lc = outputs.last_hidden_state.mean(dim=1).squeeze().numpy().tolist()
+res = collection2.query(
+      query_embeddings=[embeddings_lc],
+        n_results=20,
+        include=['documents','distances','metadatas'],
+        )
+print(text)
+res
+
+
+    
