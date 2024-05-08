@@ -1,0 +1,126 @@
+import pytest
+import json
+import sys
+import os
+from datetime import datetime
+
+current_dir = os.path.dirname(__file__)
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
+
+from app import *
+
+from fastapi.testclient import TestClient
+
+
+client = TestClient(app)
+
+
+def test_root():
+    response = client.get("/api/healthchecker")
+    print(response.json())
+    assert response.status_code == 200
+    assert response.json() == {"message": "The API is LIVE!!"}
+
+# def test_create_system():
+#     sample_payload = {
+#         "domain_name": "patient_domain2",
+#         "table_name": "patient2",
+#         "field_name": "patient_name3",
+#         "alias_name": "pt2",
+#         "createdAt": "2023-03-17T00:04:32",
+#         "updatedon": "2023-03-17T00:04:32",
+#     }
+   
+#     response = client.post("/api/systems/", json=sample_payload)
+#     print('RESPONSE',response.json())
+#     assert response.status_code == 201
+
+def test_create_system_from_csv():
+    csv_data = """domain_name,table_name,field_name,alias_name
+                    claim,claimheader,claim_id,ch
+                    claim,claimheader,pat_name,ch
+                    """
+
+    # Convert CSV data to a file-like object
+    response = client.post("/api/systems/upload", files={"file": ("InputDBFileStructure.csv", csv_data, "text/csv")})
+
+    assert response.status_code == 201
+    #assert response.json()["Status"] == "Success"
+   
+
+def test_get_system():
+      
+    response = client.get("/api/systems/")
+    print("GET",response.json())
+    assert response.status_code == 200
+
+def test_get_system_domain():
+    domain = "claim"
+    response = client.get(f"/api/systems/{domain}")
+    #print(response.json())
+    assert response.status_code == 200 
+
+def test_get_system_domain_table():
+    domain = "claim"
+    tablename = "claimheader"
+    response = client.get(f"/api/systems/{domain}/{tablename}")
+    #print(response.json())
+    assert response.status_code == 200     
+
+# def test_update_system_domain_table():
+#     domain = "patient_domain2"
+#     tablename = "patient2"
+#     sample_payload = {
+#         "domain_name": "patient_domain2",
+#         "table_name": "patient2",
+#         "field_name": "patient_name22",
+#         "alias_name": "pt22"
+        
+#     }
+#     response = client.patch(f"/api/systems/{domain}/{tablename}", json=sample_payload)
+#     assert response.status_code == 202  
+    
+def test_delete_system():
+    domain = 'claim'
+    response = client.delete(f"/api/systems/{domain}") 
+    #print(response.json())
+    assert response.status_code == 200
+
+def testSqltoJson():
+    sql = """Select count(MB.MEME_FIRST_NAME),*
+    from SUBSCRIBER as SB
+    inner join MEMBER as MB On SB.SBSB_CK =MB.SBSB_CK
+    where MB.MEME_ID_NAME = 'X' and SB.SBSB_ID='Y'"""
+    # sql = 'select claim from claimheader'
+    response = client.get("/api/sqlToJson",params ={'sqlQuery': sql})
+    return response.json()
+    # assert response.status_code == 200
+    # return response.status_code
+
+def testJsonToSql(fieldList:str):
+    # fieldList:dict = {"1":[{"originalSql": "Select sum(T1.Field1),count(T2.Field2) as CTF\nfrom Table1 as T1\ninner join Table2 as T2 On T1.Field1 =T2.Field5\nwhere T1.Field2 = 'X' and T2.Field3='Y'"}, {"column_name": "Field1", "table_name": {"T1": "Table1"}, "Selected": True, "Used_in_filter": False, "Used_in_join": True, "Summarized": "sum"}, {"column_name": "Field2", "table_name": {"T2": "Table2"}, "Selected": True, "Used_in_filter": False, "Used_in_join": False, "Summarized": "count"}, {"column_name": "Field5", "table_name": {"T2": "Table2"}, "Selected": False, "Used_in_filter": False, "Used_in_join": True, "Summarized": "None"}, {"column_name": "Field2", "table_name": {"T1": "Table1"}, "Selected": False, "Used_in_filter": True, "Used_in_join": False, "Summarized": "None"}, {"column_name": "Field3", "table_name": {"T2": "Table2"}, "Selected": False, "Used_in_filter": True, "Used_in_join": False, "Summarized": "None"}]}
+    # fieldList:list = [{"originalSql": "Select sum(T1.Field1),count(T2.Field2) as CTF\nfrom Table1 as T1\ninner join Table2 as T2 On T1.Field1 =T2.Field5\nwhere T1.Field2 = 'X' and T2.Field3='Y'"}, {"column_name": "Field1", "table_name": {"T1": "Table1"}, "Selected": True, "Used_in_filter": False, "Used_in_join": True, "Summarized": "sum"}, {"column_name": "Field2", "table_name": {"T2": "Table2"}, "Selected": True, "Used_in_filter": False, "Used_in_join": False, "Summarized": "count"}, {"column_name": "Field5", "table_name": {"T2": "Table2"}, "Selected": False, "Used_in_filter": False, "Used_in_join": True, "Summarized": "None"}, {"column_name": "Field2", "table_name": {"T1": "Table1"}, "Selected": False, "Used_in_filter": True, "Used_in_join": False, "Summarized": "None"}, {"column_name": "Field3", "table_name": {"T2": "Table2"}, "Selected": False, "Used_in_filter": True, "Used_in_join": False, "Summarized": "None"}]
+    # fieldJson = json.dumps(fieldList)
+    response = client.get("/api/jsonToSql",params ={'fieldDictList1': fieldList})
+    return response.json()
+    # assert response.status_code == 201
+    
+@pytest.fixture(scope = "session",autouse = True)  
+def cleanup_database():
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+    engine.dispose()
+
+# test_root()
+# print("TEST1")
+# print("")
+# test_create_system()    
+# response = testSqltoJson()
+# FieldList:list = response['Fields']
+# print(len(FieldList))
+# response2 = testJsonToSql(str(FieldList))
+# print(response2)
+# print(response2)
+# print(response)
