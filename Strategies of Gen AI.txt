@@ -1,0 +1,58 @@
+Strategies of Gen AI
+----------
+1) Microservice architecture.
+2) Chunking ( for splitting the documents so that retrieval will be faster)
+3) If there are thousand multiple PDF's to derive insights, we always pass smaller context to derive specific answers. In Input specific probably pages where there are relevant answers.
+4) Langchain or LLAMA Index, BOTH ARE GOOD. More updates in LLAMA Index.
+5) Add Context in the Input Prompt.
+6) Important Parameters such as Temperature, Max Tokens, top_p
+7) Suppose we split the documents into chunks. The requirement is client is asking something about sales.
+We can find similar words from the chunked documents. But how about the client asks something about
+Revenue. For this we do embeddings, that is convert the chunked tokens into similar vectors based on
+the embedding models.
+   Chunks in Langchain  is equivalent to Nodes in Llama Index.
+By Default LLAMA Index when storing chunks into Vector DB uses Open AI Embeddings by default if we do not specify the embeddings model.
+8) To improve accuracy, we can 
+  a) retweek our prompt by asking in a different way.
+  b) Giving a persona in LLM Model by saying "You are a Mathematician..."
+  c) Giving Context
+  d) Few Short Prompting
+  e) SOmetimes using Agents might not give accurate answers. we use different strategies.
+  f) Also there is Reward Based approach also, we can say if you answer this we give you 2 points.
+9) We can specify Output Formats.
+10) Retrieval Augmentation --> An easy and popular way to use your own data is to provide it as part of the prompt with which you query the LLM model. 
+11) Outputs(Response)
+   --LLM  as a Service --> We just use API call to the Chatgpt application
+   --Local Deployment --> DOwnlload the Hugging Face  transformer library and use it.Disadvantange is managing it infrastructure in local server, maintenance, it requires GPU.
+   --Hybrid -->We download the library and convert it to an API and deploy it in Cloud so that GPU contraints are not there.
+12) Larger COntexts of LLM Model means more Memory.
+13)LLAMA3, Mistral, Mixtral,Starcoder are open source free Models.
+14) SOmetimes relevant chunks might not come in retrieval although similar might not comeup with cosine similarity, then
+   a) Try other similarity search algorithims.
+   b) Increase the number of chunks retrieved . example we say ret = index.as_retriever(top_k=5).We generally start with 5 and then verify the retrived chunks, then 6,7,8. We should not increase it more than 8.
+       -- If we increase number of chunks to large number, there are possibilities of irrelevant chunks being picked up.
+       -- Increase in number of tokens.
+       -- Latency issues.( time to retrieve chunks - retrieval)
+       -- Higher Cost. Cost is generally per token.
+       -- Error. Our base Model having a limit on the token size might exceed its limit.
+   c) Adjust Chunk Size and Overlap Size.
+      --lesser the chunk size, it is more beneficial in retrieval. We have to experiment generally
+        on the chunk size and overlap size.
+      -- We should not reduce chunk size drastically as LLM will not get context to generate good answers.
+      -- If we change chunk size, embeddings should be recalculated. Embeddings generally take time.
+         For Faster Processing, we could use multi threading.
+         Example, Processing 25 documents each having 30 pages took 5 mins for chunking and 4 hours for embeddings with 16 GB RAM. We could GPU's or multi threading for faster processing.
+         We could create Embeddings in GPU.
+15) Example Vector DB --> mONGO,chroma, Milvus, Weaviate, PineCone, CosmosDB, PgVector, FAISS(It is not a DB but an Index).
+                      --> Mongo -->In this we can get availability to choose the similarity Type such as Cosine, Euclidean, KNN. Cosine Similairty is widely used.
+                                --> Each Vector DB has a limitation on the number of embeddings it can create. Example Mongo DB can only allow a limit of 2000 dimensional embeddings.
+Thus we must be careful by choosing our embedding model.
+16) We must understand our use case and choose our appropriate embedding models by searching in google.
+17) Asks the business what top possible questions  they might ask and provide the predefined answers or sometimes we can directly parse the chunked output using python preprocessing
+   and provide outputs or highly contextual, we can then try to hit the LLM embeddings.
+     
+14) a) what should be the ideal chunk size and chunk overlap ?
+    b) LOINC Code.--> Search agents..
+link -> https://drive.google.com/drive/folders/1AySrUIKklmgyVkhMHW5cVdCcHyi9yQzc?usp=drive_link
+
+
